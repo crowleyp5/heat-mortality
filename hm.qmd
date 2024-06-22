@@ -43,6 +43,8 @@ ggplot(data = heat) +
 
 There are patches of yellow and green blocks, indicating consistent overestimation of mortality in those areas. We should test for spatial correlation.
 
+## Moran's I Test for Spatial Correlation
+
 ```{r, echo=FALSE}
 heat <- st_make_valid(heat) # Fix invalid shared vertex
 ```
@@ -59,33 +61,7 @@ print(moran_result)
 
 The results of the Moran I test give statistically significant evidence of spatial correlation. The model must account for this correlation for accurate inference.
 
-## 3
-
-$$
-Y_i \sim Pois(\lambda_i)
-$$
-$$
-log(\lambda_i)=x_i'\beta+b_i'\theta
-$$
-$\log(\lambda_i)$: The natural logarithm of the expected heat-related morbidity count, ensuring positive values of $\lambda_i$.
-$x_i'$: The transpose of the vector of covariates for the $i$th unit, including all 10 explanatory variable from the data set.
-$\beta$: Coefficients for the covariates, quantifying the effect of each covariate on the expected count.
-For example, if the value of $\beta_{medianAge}$ coefficient is 0.2, the interpretation would be as follows:
-$$
-\text{For a one-unit increase in the median age, the expected count of events, } \lambda_i, \text{ is multiplied by } e^{0.2} \approx 1.22.
-$$
-This means that the expected count increases by 22\% for every one year increase in median age, assuming all other factors are held constant.
-$b_i'$: The transpose of the vector of spatial random effects for the $i$-th unit, capturing unobserved spatial variability. It is a linear combination of $\sum_k \theta_k b_k(s_i)$
-$b_k(s)$ is defined as a Gaussian kernel centered at location $s_k$:
-$$
-b_k(s) = \frac{1}{\sqrt{2\pi v}} \exp\left(-\frac{1}{2v} (s - s_k)^T (s - s_k)\right)
-$$
-This expression represents the spatial basis function at a point $s$, and $s_k$ is the center of the $k$th basis function. The parameter $v$ controls the variance or the spread of the kernel.
-$\theta$: Coefficients for the spatial random effects, indicating the influence of spatial structure on the morbidity counts.
-
-By using multiple basis functions centered at different locations, the model can adapt to local variations in the spatial structure of the data. The inclusion of spatial basis functions also helps in capturing unexplained spatially structured variance.
-
-## 4
+## Spatial Weight Matrix and Model Fit
 
 ```{r, fig.align='center'}
 # Calculate Moran's Eigenvectors and create dataframe
