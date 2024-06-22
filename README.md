@@ -80,4 +80,4 @@ This map shows the residuals after incorporating these elements:
 
 ![PoissonResid](assets/after.png)
 
-The map is a much nicer blue-green color that shows great improvement from the linear fit.
+The map is a much nicer blue-green color that shows great improvement over the linear fit.
