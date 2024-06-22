@@ -1,5 +1,5 @@
 ### Overview
-This repository contains an analysis of heat-related mortality in Houston. The data looks something like this:
+This repository contains an analysis of heat-related mortality in Houston using Poisson regression and spatial basis functions. The data looks something like this:
 
 | Count| Population| NOAC| MED_AGE| HispanicPC| BlackPCT| under5PCT| over65PCT| povertyPCT| alonePCT| MinTemp| geometry                      |
 |------|-----------|-----|--------|-----------|---------|----------|----------|-----------|---------|--------|-------------------------------|
