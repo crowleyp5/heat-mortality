@@ -21,6 +21,7 @@ heat_lm <- lm(log_count ~ NOAC + MED_AGE + HispanicPC + BlackPCT + under5PCT + o
 The formula for this model is a simple $Y = X\beta + \epsilon$. Where $Y$ is a vector of the death count, $X$ is a matrix of the explanatory variables, $\beta$ is a vector of the estimated coefficients, and $\epsilon$ is a vector of the residuals.
 
 A map of the residuals for this model looks like this:
+
 ![LMResid](assets/before.png)
 
 This map shows patches of yellow and blue, suggesting spatial correlation. The linear model incorrectly assumes that each observation is independent from each other when this is most likely not the case.
@@ -76,4 +77,7 @@ heat_glm <- glm(Count ~ . - log_count - residuals, family = poisson(), data = he
 ```
 
 This map shows the residuals after incorporating these elements:
+
 ![PoissonResid](assets/after.png)
+
+The map is a much nicer blue-green color that shows great improvement from the linear fit.
