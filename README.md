@@ -38,7 +38,7 @@ $$
 \log(\lambda_i) = x_i'\beta + b_i'\theta
 $$
 
-- **$\log(\lambda_i)$**: The natural logarithm of the expected heat-related morbidity count, ensuring positive values of $\lambda_i$.
+- **$\log(\lambda_i)$**: The natural logarithm of the expected heat-related morbidity count with ensured positive values of $\lambda_i$.
 - **$x_i'$**: The transpose of the vector of covariates for the $i$-th unit, including all 10 explanatory variables from the dataset.
 - **$\beta$**: Coefficients for the covariates, quantifying the effect of each covariate on the expected count.
 
