@@ -1,5 +1,3 @@
-# heat-mortality
-
 ### Overview
 This repository contains an analysis of heat-related mortality in Houston. The data looks something like this:
 
@@ -10,7 +8,6 @@ This repository contains an analysis of heat-related mortality in Houston. The d
 | 3    | 3055      | 0   | 39.1   | 0.09      | 0.25    | 0.06     | 0.06     | 0.04      | 0.03    | 24.446 | MULTIPOLYGON (((-95.52326 2...|
 | 4    | 1272      | 0   | 24.7   | 0.67      | 0.29    | 0.11     | 0.03     | 0.31      | 0.01    | 24.735 | MULTIPOLYGON (((-95.45417 2...|
 | 5    | 2786      | 0   | 31.5   | 0.08      | 0.86    | 0.08     | 0.03     | 0.11      | 0.07    | 24.598 | MULTIPOLYGON (((-95.51841 2...|
-| 6    | 2438      | 0   | 27.0   | 0.29      | 0.68    | 0.08     | 0.03     | 0.08      | 0.03    | 24.714 | MULTIPOLYGON (((-95.46127 2...|
 
 The observational unit is a block (or group of blocks). The `Count` variable is the number of heat-related deaths on the block, which we are trying to predict.
 
@@ -61,6 +58,22 @@ $$
 This equation represents the spatial basis function at a point $s$, where $s_k$ is the center of the $k$-th basis function. The parameter $v$ controls the variance or the spread of the kernel.
 
 - **$\theta$**: Coefficients for the spatial random effects, indicating the influence of spatial structure on the morbidity counts.
+
+```r
+# Neighbors list for spatial weights
+nb <- poly2nb(heat)
+listw <- nb2listw(nb, style = "W")
+
+# Calculate Moran's Eigenvectors and create dataframe
+A <- nb2mat(poly2nb(heat), style = "B")
+X <- model.matrix(heat_lm)
+M <- moranBasis(X, A, tol=0.95)
+heatDF <- cbind(heat, M)
+heatDF <- st_drop_geometry(heatDF)
+
+# Fit Poisson Model
+heat_glm <- glm(Count ~ . - log_count - residuals, family = poisson(), data = heatDF)
+```
 
 This map shows the residuals after incorporating these elements:
 ![PoissonResid](assets/after.png)
