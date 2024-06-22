@@ -43,9 +43,9 @@ $$
 - **$\beta$**: Coefficients for the covariates, quantifying the effect of each covariate on the expected count.
 
 For example, if the value of the $\beta_{\text{medianAge}}$ coefficient is 0.2, the interpretation would be:
-$$
-\text{For a one-unit increase in the median age, the expected count of events, } \lambda_i, \text{ is multiplied by } e^{0.2} \approx 1.22.
-$$
+
+For a one-unit increase in the median age, the expected count of events $\lambda_i$, is multiplied by $e^{0.2} \approx 1.22$.
+
 This means that the expected count increases by 22% for every one year increase in median age, assuming all other variables are held constant.
 
 - **$b_i'$**: The transpose of the vector of spatial random effects for the $i$-th unit, capturing unobserved spatial variability. It is a linear combination of $\sum_k \theta_k b_k(s_i)$.
