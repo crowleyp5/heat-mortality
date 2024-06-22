@@ -1,0 +1,138 @@
+---
+title: "Heat-related Mortality"
+author: Paul Crowley
+output: html_document
+---
+
+<style type="text/css">
+h1.title {
+font-size: 40px;
+text-align: center;
+}
+</style>
+
+```{r setup, include=FALSE}
+source("predictgls.R")
+source("stdres.gls.R")
+source("moranBasis.R")
+library(tidyverse)
+library(sf)
+library(sp)
+library(spdep)
+```
+
+```{r, echo = FALSE}
+heat <- st_read("HoustonHeat.shp")
+head(heat)
+```
+
+## Base Linear Model
+
+```{r, fig.align='center'}
+# Fit independent MLR model with logged response
+heat$log_count <- log(heat$Count + 1)
+heat_lm <- lm(log_count ~ NOAC + MED_AGE + HispanicPC + BlackPCT + under5PCT + over65PCT + povertyPCT + alonePCT + MinTemp + MinTemp + Population, data = heat)
+
+# Plot residuals
+heat$residuals <- residuals(heat_lm)
+ggplot(data = heat) +
+  geom_sf(aes(fill = residuals), color = NA) +
+  scale_fill_viridis_c() +
+  labs(title = "Map of Residuals")
+```
+
+There are patches of yellow and green blocks, indicating consistent overestimation of mortality in those areas. We should test for spatial correlation.
+
+```{r, echo=FALSE}
+heat <- st_make_valid(heat) # Fix invalid shared vertex
+```
+
+```{r, fig.align='center'}
+# Neighbors list for spatial weights
+nb <- poly2nb(heat)
+listw <- nb2listw(nb, style = "W")
+
+# Perform Moran's I test
+moran_result <- moran.test(residuals(heat_lm), listw)
+print(moran_result)
+```
+
+The results of the Moran I test give statistically significant evidence of spatial correlation. The model must account for this correlation for accurate inference.
+
+## 3
+
+$$
+Y_i \sim Pois(\lambda_i)
+$$
+$$
+log(\lambda_i)=x_i'\beta+b_i'\theta
+$$
+$\log(\lambda_i)$: The natural logarithm of the expected heat-related morbidity count, ensuring positive values of $\lambda_i$.
+$x_i'$: The transpose of the vector of covariates for the $i$th unit, including all 10 explanatory variable from the data set.
+$\beta$: Coefficients for the covariates, quantifying the effect of each covariate on the expected count.
+For example, if the value of $\beta_{medianAge}$ coefficient is 0.2, the interpretation would be as follows:
+$$
+\text{For a one-unit increase in the median age, the expected count of events, } \lambda_i, \text{ is multiplied by } e^{0.2} \approx 1.22.
+$$
+This means that the expected count increases by 22\% for every one year increase in median age, assuming all other factors are held constant.
+$b_i'$: The transpose of the vector of spatial random effects for the $i$-th unit, capturing unobserved spatial variability. It is a linear combination of $\sum_k \theta_k b_k(s_i)$
+$b_k(s)$ is defined as a Gaussian kernel centered at location $s_k$:
+$$
+b_k(s) = \frac{1}{\sqrt{2\pi v}} \exp\left(-\frac{1}{2v} (s - s_k)^T (s - s_k)\right)
+$$
+This expression represents the spatial basis function at a point $s$, and $s_k$ is the center of the $k$th basis function. The parameter $v$ controls the variance or the spread of the kernel.
+$\theta$: Coefficients for the spatial random effects, indicating the influence of spatial structure on the morbidity counts.
+
+By using multiple basis functions centered at different locations, the model can adapt to local variations in the spatial structure of the data. The inclusion of spatial basis functions also helps in capturing unexplained spatially structured variance.
+
+## 4
+
+```{r, fig.align='center'}
+# Calculate Moran's Eigenvectors and create dataframe
+A <- nb2mat(poly2nb(heat), style = "B")
+X <- model.matrix(heat_lm)
+M <- moranBasis(X, A, tol=0.95)
+heatDF <- cbind(heat, M)
+heatDF <- st_drop_geometry(heatDF)
+
+# Fit GLM
+heat_glm <- glm(Count ~ . - log_count - residuals, family = poisson(), data = heatDF)
+```
+
+
+```{r, fig.align='center'}
+resid_decorrelated <- residuals(heat_glm, type = "response")
+moran.test(resid_decorrelated, listw)
+heat$std_resid <- scale(resid_decorrelated)
+ggplot(data = heat) +
+  geom_sf(aes(fill = std_resid), color = "black") +
+  scale_fill_distiller(palette = "Spectral", name = "Standardized\nResiduals")
+```
+
+The residuals do not appear spatially correlated anymore based the Moran I test and this map.
+
+## Confidence Intervals of Coefficients
+
+```{r, fig.align='center'}
+# Extract coefficients and calculate intervals
+coef_summary <- summary(heat_glm)$coefficients
+selected_coefs <- coef_summary[1:11, ]
+ci_lower <- selected_coefs[, "Estimate"] - 1.96 * selected_coefs[, "Std. Error"]
+ci_upper <- selected_coefs[, "Estimate"] + 1.96 * selected_coefs[, "Std. Error"]
+conf_intervals <- data.frame(
+  Lower = ci_lower,
+  Upper = ci_upper
+)
+```
+## Map Residuals
+
+```{r, fig.align='center'}
+# Plot correlated residuals
+heat$dev_resid <- residuals(heat_glm, type = "deviance")
+ggplot(data = heat) +
+  geom_sf(aes(fill = dev_resid), color = NA) +
+  scale_fill_viridis_c(option = "D") +
+  labs(title = "Map of Deviance Residuals",
+       fill = "Residuals") +
+  theme_minimal()
+```
